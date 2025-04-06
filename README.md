@@ -1,0 +1,2 @@
+# XecureCode
+QR Code Validator
