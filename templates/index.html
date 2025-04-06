@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xecure Code Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary-color: #2ec4b6;
+            --accent-color: #ff9f1c;
+            --light-bg: #f8f9fa;
+            --dark-bg: #212529;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --success-color: #38b000;
+            --danger-color: #d90429;
+            --warning-color: #ffb703;
+            --card-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+            --transition-speed: 0.3s;
+        }
+        
+        body { 
+            padding: 0;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .generator-container {
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            padding: 1.5rem 0;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .app-title {
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+            position: relative;
+        }
+        
+        .app-title::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: -5px;
+            height: 3px;
+            width: 40px;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            border-radius: 10px;
+        }
+        
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .user-info {
+            padding: 0.75rem 1.25rem;
+            background-color: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all var(--transition-speed);
+        }
+        
+        .user-info:hover {
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+            transform: translateY(-2px);
+        }
+        
+        .user-info i {
+            color: var(--primary-color);
+            font-size: 1.25rem;
+        }
+        
+        .user-info .user-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .user-name {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .btn {
+            border-radius: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            transition: all var(--transition-speed);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, var(--success-color) 0%, #2d9900 100%);
+            border: none;
+        }
+        
+        .btn-success:hover {
+            background: linear-gradient(135deg, #2d9900 0%, var(--success-color) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(56, 176, 0, 0.3);
+        }
+        
+        .btn-secondary {
+            background-color: #e9ecef;
+            color: var(--text-secondary);
+            border: none;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #dee2e6;
+            color: var(--text-primary);
+            transform: translateY(-2px);
+        }
+        
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 1.25rem;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            background-color: white;
+            margin-bottom: 2rem;
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #f6f9fe 0%, #f0f4fc 100%);
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .card-header h3 {
+            margin: 0;
+            color: var(--primary-color);
+            font-weight: 600;
+            font-size: 1.5rem;
+        }
+        
+        .card-body {
+            padding: 2rem;
+        }
+        
+        .form-label {
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-control {
+            border-radius: 0.75rem;
+            padding: 0.75rem 1rem;
+            border: 1px solid #e0e0e0;
+            background-color: #f8f9fa;
+            transition: all 0.2s;
+        }
+        
+        .form-control:focus {
+            box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.15);
+            border-color: var(--primary-color);
+            background-color: #fff;
+        }
+        
+        .gap-2 {
+            gap: 0.75rem !important;
+        }
+        
+        #previewContainer {
+            background-color: #f8f9fa;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-top: 2rem;
+            text-align: center;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        #qrPreview {
+            max-width: 250px;
+            border-radius: 0.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            padding: 1rem;
+            background-color: white;
+            margin: 1.5rem auto;
+            transition: all var(--transition-speed);
+        }
+        
+        #qrPreview:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .footer {
+            margin-top: 2rem;
+            text-align: center;
+            color: var(--text-secondary);
+            padding: 1rem 0;
+            font-size: 0.875rem;
+        }
+        
+        /* Loading animation */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+            margin-right: 0.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .generator-container {
+                padding: 1rem;
+            }
+            
+            .header-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .card-body {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="generator-container">
+        <header class="header">
+            <div class="header-container">
+                <h1 class="app-title mb-0">Xecure Code Generator</h1>
+                
+                <div>
+                    {% if dealer_id %}
+                    <div class="user-info">
+                        <div class="user-badge">
+                            <i class="bi bi-person-badge-fill"></i>
+                            <span>Dealer: <span class="user-name">{{ dealer_id }}</span></span>
+                        </div>
+                        <a href="/dashboard" class="btn btn-sm btn-secondary me-2">
+                            <i class="bi bi-grid"></i> Dashboard
+                        </a>
+                        <a href="/logout" class="btn btn-sm btn-danger">
+                            <i class="bi bi-box-arrow-right"></i> Logout
+                        </a>
+                    </div>
+                    {% else %}
+                    <div class="user-info">
+                        <div class="user-badge">
+                            <i class="bi bi-person"></i>
+                            <span>Guest User</span>
+                        </div>
+                        <a href="/dashboard" class="btn btn-sm btn-secondary me-2">
+                            <i class="bi bi-grid"></i> Dashboard
+                        </a>
+                        <a href="/" class="btn btn-sm" style="background-color: #e3f2fd; color: var(--primary-color);">
+                            <i class="bi bi-box-arrow-in-right"></i> Login
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </header>
+        
+        <main>
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="bi bi-qr-code me-2"></i> Create a New Xecure Code</h3>
+                        </div>
+                        <div class="card-body">
+                            <form id="generateForm">
+                                <div class="mb-4">
+                                    <label for="qrData" class="form-label">Enter Xecure Code Data</label>
+                                    <input type="text" class="form-control" id="qrData" placeholder="Enter the data to encode in the Xecure code" required>
+                                    <div class="form-text text-muted">This data will be encoded into the Xecure code image.</div>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-qr-code-scan me-1"></i> Generate Xecure Code
+                                    </button>
+                                    <a href="/dashboard" class="btn btn-secondary">
+                                        <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+                                    </a>
+                                </div>
+                            </form>
+                            
+                            <div id="previewContainer" style="display: none;">
+                                <h4 class="mb-3">Your Xecure Code is Ready</h4>
+                                <div class="qr-preview-wrapper">
+                                    <img id="qrPreview" class="img-fluid" alt="Generated Xecure Code">
+                                </div>
+                                <p class="text-muted">Scan this Xecure code with a compatible app to verify its contents</p>
+                                <div class="action-buttons">
+                                    <a id="downloadLink" href="#" class="btn btn-success">
+                                        <i class="bi bi-download me-1"></i> Download Xecure Code
+                                    </a>
+                                    <a href="/validate" class="btn btn-primary">
+                                        <i class="bi bi-check-circle me-1"></i> Validate Xecure Code
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer class="footer">
+            <p>© 2023 Xecure Code System | Secure Product Tracking and Validation</p>
+        </footer>
+    </div>
+    
+    <script>
+        document.getElementById('generateForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const qrData = document.getElementById('qrData').value;
+            if (!qrData) return;
+            
+            try {
+                const formData = new FormData();
+                formData.append('data', qrData);
+                
+                // Show loading state
+                const button = e.target.querySelector('button[type="submit"]');
+                const originalText = button.innerHTML;
+                button.innerHTML = '<span class="loading-spinner"></span>Generating...';
+                button.disabled = true;
+                
+                // Fetch QR code as blob
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) throw new Error('Failed to generate QR code');
+                
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                
+                // Update preview and download link
+                document.getElementById('qrPreview').src = url;
+                
+                const downloadLink = document.getElementById('downloadLink');
+                downloadLink.href = url;
+                downloadLink.download = 'qrcode.png';
+                
+                // Show the preview container with smooth animation
+                const previewContainer = document.getElementById('previewContainer');
+                previewContainer.style.display = 'block';
+                previewContainer.scrollIntoView({ behavior: 'smooth' });
+                
+                // Reset button state
+                button.innerHTML = originalText;
+                button.disabled = false;
+                
+            } catch (error) {
+                console.error('Error generating QR code:', error);
+                alert('Error generating QR code: ' + error.message);
+                
+                // Reset button on error
+                const button = e.target.querySelector('button[type="submit"]');
+                button.innerHTML = '<i class="bi bi-qr-code-scan me-1"></i> Generate QR Code';
+                button.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html> 

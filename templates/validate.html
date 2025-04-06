@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xecure Code Validation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary-color: #2ec4b6;
+            --accent-color: #ff9f1c;
+            --light-bg: #f8f9fa;
+            --dark-bg: #212529;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --success-color: #38b000;
+            --danger-color: #d90429;
+            --warning-color: #ffb703;
+            --card-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+            --transition-speed: 0.3s;
+        }
+        
+        body { 
+            padding: 0;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .validation-container {
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            padding: 1.5rem 0;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .app-title {
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+            position: relative;
+        }
+        
+        .app-title::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: -5px;
+            height: 3px;
+            width: 40px;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            border-radius: 10px;
+        }
+        
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .user-info {
+            padding: 0.75rem 1.25rem;
+            background-color: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all var(--transition-speed);
+        }
+        
+        .user-info:hover {
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+            transform: translateY(-2px);
+        }
+        
+        .user-info i {
+            color: var(--primary-color);
+            font-size: 1.25rem;
+        }
+        
+        .user-info .user-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .user-name {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .btn {
+            border-radius: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            transition: all var(--transition-speed);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, var(--success-color) 0%, #2d9900 100%);
+            border: none;
+        }
+        
+        .btn-success:hover {
+            background: linear-gradient(135deg, #2d9900 0%, var(--success-color) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(56, 176, 0, 0.3);
+        }
+        
+        .btn-secondary {
+            background-color: #e9ecef;
+            color: var(--text-secondary);
+            border: none;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #dee2e6;
+            color: var(--text-primary);
+            transform: translateY(-2px);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger-color) 0%, #b10012 100%);
+            border: none;
+        }
+        
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #b10012 0%, var(--danger-color) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(217, 4, 41, 0.3);
+        }
+        
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 1.25rem;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            background-color: white;
+            margin-bottom: 2rem;
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #f0f6fa 0%, #e5f0f9 100%);
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .card-header h3 {
+            margin: 0;
+            color: var(--primary-color);
+            font-weight: 600;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .card-body {
+            padding: 2rem;
+        }
+        
+        .form-label {
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-control {
+            border-radius: 0.75rem;
+            padding: 0.75rem 1rem;
+            border: 1px solid #e0e0e0;
+            background-color: #f8f9fa;
+            transition: all 0.2s;
+        }
+        
+        .form-control:focus {
+            box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.15);
+            border-color: var(--primary-color);
+            background-color: #fff;
+        }
+        
+        #videoContainer {
+            position: relative;
+            max-width: 500px;
+            margin: 0 auto;
+            display: none;
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+        
+        #qrVideo {
+            width: 100%;
+            border-radius: 0.5rem;
+            display: block;
+        }
+        
+        #scanOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: 3px solid var(--success-color);
+            border-radius: 0.5rem;
+            display: none;
+            animation: pulse-border 2s infinite;
+        }
+        
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(56, 176, 0, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(56, 176, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(56, 176, 0, 0); }
+        }
+        
+        .tab-content {
+            padding-top: 1.5rem;
+        }
+        
+        .nav-tabs {
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        .nav-tabs .nav-link {
+            border: none;
+            color: var(--text-secondary);
+            border-radius: 0.5rem 0.5rem 0 0;
+            padding: 0.75rem 1.5rem;
+            margin-right: 0.5rem;
+            font-weight: 500;
+            transition: all var(--transition-speed);
+        }
+        
+        .nav-tabs .nav-link:hover {
+            color: var(--primary-color);
+            background-color: rgba(67, 97, 238, 0.05);
+            border: none;
+        }
+        
+        .nav-tabs .nav-link.active {
+            color: var(--primary-color);
+            background-color: white;
+            border: none;
+            border-bottom: 3px solid var(--primary-color);
+        }
+        
+        .nav-tabs .nav-link.active:hover {
+            border-bottom: 3px solid var(--primary-color);
+        }
+        
+        .nav-tabs .nav-link i {
+            margin-right: 0.5rem;
+        }
+        
+        #locationInfo {
+            padding: 0.75rem 1rem;
+            background-color: rgba(46, 196, 182, 0.1);
+            border-radius: 0.75rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        #locationInfo i {
+            color: var(--secondary-color);
+        }
+        
+        #validateResult {
+            margin-top: 2rem;
+        }
+        
+        .alert {
+            border-radius: 1rem;
+            padding: 1.5rem;
+            border: none;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .alert-success {
+            background: linear-gradient(135deg, #f1faee 0%, #e9f5e9 100%);
+            border-left: 5px solid var(--success-color);
+        }
+        
+        .alert-danger {
+            background: linear-gradient(135deg, #fdf0f3 0%, #fae6e9 100%);
+            border-left: 5px solid var(--danger-color);
+        }
+        
+        .alert-heading {
+            color: var(--text-primary);
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .alert-success .alert-heading i {
+            color: var(--success-color);
+        }
+        
+        .alert-danger .alert-heading i {
+            color: var(--danger-color);
+        }
+        
+        .bg-dark {
+            background: linear-gradient(135deg, var(--dark-bg) 0%, #343a40 100%) !important;
+            border-radius: 0.75rem !important;
+        }
+        
+        .footer {
+            margin-top: 2rem;
+            text-align: center;
+            color: var(--text-secondary);
+            padding: 1rem 0;
+            font-size: 0.875rem;
+        }
+        
+        @media (max-width: 768px) {
+            .validation-container {
+                padding: 1rem;
+            }
+            
+            .header-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .card-body {
+                padding: 1.5rem;
+            }
+            
+            .nav-tabs .nav-link {
+                padding: 0.5rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+        
+        .hierarchy-tree {
+            position: relative;
+            padding-left: 20px;
+        }
+        
+        .hierarchy-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .hierarchy-item:not(:last-child)::before {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: 30px;
+            bottom: -10px;
+            width: 2px;
+            background: linear-gradient(to bottom, var(--primary-color), var(--secondary-color));
+        }
+        
+        .level-badge {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            z-index: 2;
+        }
+        
+        .level-badge i {
+            font-size: 1.2rem;
+            color: white;
+        }
+        
+        .carton-badge {
+            background: linear-gradient(135deg, #4361ee 0%, #3a56d4 100%);
+        }
+        
+        .box-badge {
+            background: linear-gradient(135deg, #3a86ff 0%, #4361ee 100%);
+        }
+        
+        .item-badge {
+            background: linear-gradient(135deg, #38b000 0%, #2d9900 100%);
+        }
+        
+        .hierarchy-content {
+            flex: 1;
+            background-color: white;
+            border-radius: 0.75rem;
+            padding: 0.5rem;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="validation-container">
+        <header class="header">
+            <div class="header-container">
+                <h1 class="app-title mb-0">Xecure Code Validation</h1>
+                
+                <div>
+                    {% if dealer_id %}
+                    <div class="user-info">
+                        <div class="user-badge">
+                            <i class="bi bi-person-badge-fill"></i>
+                            <span>Dealer: <span class="user-name">{{ dealer_id }}</span></span>
+                        </div>
+                        <a href="/dashboard" class="btn btn-sm btn-secondary me-2">
+                            <i class="bi bi-grid"></i> Dashboard
+                        </a>
+                        <a href="/reports" class="btn btn-sm btn-info me-2">
+                            <i class="bi bi-bar-chart-fill"></i> Reports
+                        </a>
+                        <a href="/logout" class="btn btn-sm btn-danger">
+                            <i class="bi bi-box-arrow-right"></i> Logout
+                        </a>
+                    </div>
+                    {% else %}
+                    <div class="user-info">
+                        <div class="user-badge">
+                            <i class="bi bi-person"></i>
+                            <span>Guest User</span>
+                        </div>
+                        <a href="/dashboard" class="btn btn-sm btn-secondary me-2">
+                            <i class="bi bi-grid"></i> Dashboard
+                        </a>
+                        <a href="/reports" class="btn btn-sm btn-info me-2">
+                            <i class="bi bi-bar-chart-fill"></i> Reports
+                        </a>
+                        <a href="/" class="btn btn-sm" style="background-color: #e3f2fd; color: var(--primary-color);">
+                            <i class="bi bi-box-arrow-in-right"></i> Login
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </header>
+        
+        <main>
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="bi bi-shield-check"></i> Verify Xecure Code Authenticity</h3>
+                        </div>
+                        <div class="card-body">
+                            <div id="locationInfo">
+                                <i class="bi bi-geo-alt"></i>
+                                <span id="locationStatus">Location access pending...</span>
+                            </div>
+                            
+                            <ul class="nav nav-tabs" id="validationTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="camera-tab" data-bs-toggle="tab" data-bs-target="#camera" type="button" role="tab">
+                                        <i class="bi bi-camera"></i> Camera Scan
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload" type="button" role="tab">
+                                        <i class="bi bi-upload"></i> Upload Image
+                                    </button>
+                                </li>
+                            </ul>
+                            
+                            <div class="tab-content" id="validationTabsContent">
+                                <!-- Upload Tab -->
+                                <div class="tab-pane fade" id="upload" role="tabpanel">
+                                    <form id="validateForm">
+                                        <div class="mb-4">
+                                            <label for="qrImage" class="form-label">Upload Xecure Code Image</label>
+                                            <input type="file" class="form-control" id="qrImage" accept="image/*" required>
+                                            <div class="form-text">Select a Xecure code image to validate its authenticity.</div>
+                                        </div>
+                                        <div class="d-flex gap-3">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="bi bi-check-circle me-1"></i> Validate Xecure Code
+                                            </button>
+                                            <a href="/dashboard" class="btn btn-secondary">
+                                                <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+                                            </a>
+                                        </div>
+                                    </form>
+                                </div>
+                                
+                                <!-- Camera Tab -->
+                                <div class="tab-pane fade show active" id="camera" role="tabpanel">
+                                    <p class="mb-3">Use your device's camera to scan and validate a Xecure code in real-time.</p>
+                                    <div class="d-flex gap-3 mb-4">
+                                        <button id="startCamera" class="btn btn-success">
+                                            <i class="bi bi-camera-video me-1"></i> Start Camera
+                                        </button>
+                                        <button id="stopCamera" class="btn btn-danger" disabled>
+                                            <i class="bi bi-camera-video-off me-1"></i> Stop Camera
+                                        </button>
+                                        <a href="/dashboard" class="btn btn-secondary">
+                                            <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+                                        </a>
+                                    </div>
+                                    <div id="videoContainer">
+                                        <video id="qrVideo" playsinline autoplay></video>
+                                        <div id="scanOverlay"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div id="validateResult" class="mt-4"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer class="footer">
+            <p>© 2023 Xecure Code System | Secure Product Tracking and Validation</p>
+        </footer>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Set dealer ID from session if available
+        const sessionDealerId = "{{ dealer_id|default('', true) }}";
+        
+        // Location tracking
+        let userLocation = null;
+        
+        // Try to get user location
+        function getUserLocation() {
+            if (navigator.geolocation) {
+                document.getElementById('locationStatus').textContent = 'Requesting location access...';
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        userLocation = {
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            accuracy: position.coords.accuracy
+                        };
+                        document.getElementById('locationStatus').innerHTML = 
+                            `Location access granted <span class="badge bg-success ms-1">Active</span> (${userLocation.latitude.toFixed(4)}, ${userLocation.longitude.toFixed(4)})`;
+                    },
+                    (error) => {
+                        console.error('Location error:', error.message);
+                        document.getElementById('locationStatus').innerHTML = 
+                            `Location access denied: ${error.message}. <span class="badge bg-warning ms-1">Limited</span> Status updates will not include location.`;
+                    }
+                );
+            } else {
+                document.getElementById('locationStatus').innerHTML = 
+                    'Geolocation is not supported by this browser. <span class="badge bg-warning ms-1">Limited</span>';
+            }
+        }
+        
+        // Request location on page load
+        getUserLocation();
+        
+        // Start camera automatically on page load since it's the default tab
+        window.addEventListener('DOMContentLoaded', async () => {
+            // Small delay to ensure DOM is fully loaded
+            setTimeout(() => {
+                if (document.getElementById('camera').classList.contains('show') && 
+                    document.getElementById('camera').classList.contains('active')) {
+                    startButton.click();
+                }
+            }, 500);
+        });
+        
+        // File upload validation
+        document.getElementById('validateForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            const fileInput = document.getElementById('qrImage');
+            
+            if (fileInput.files.length > 0) {
+                // Show loading state
+                const button = e.target.querySelector('button[type="submit"]');
+                const originalText = button.innerHTML;
+                button.innerHTML = '<div class="spinner-border spinner-border-sm me-2" role="status"></div> Processing...';
+                button.disabled = true;
+                
+                formData.append('qrImage', fileInput.files[0]);
+                formData.append('dealerId', sessionDealerId);
+                
+                // Add location data if available
+                if (userLocation) {
+                    formData.append('latitude', userLocation.latitude);
+                    formData.append('longitude', userLocation.longitude);
+                }
+                
+                try {
+                    await processQrCode(formData);
+                } finally {
+                    // Reset button state
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }
+            }
+        });
+        
+        // Camera scanning
+        const videoElement = document.getElementById('qrVideo');
+        const startButton = document.getElementById('startCamera');
+        const stopButton = document.getElementById('stopCamera');
+        const videoContainer = document.getElementById('videoContainer');
+        const scanOverlay = document.getElementById('scanOverlay');
+        
+        let stream = null;
+        let scanInterval = null;
+        
+        // Initialize tabs
+        document.getElementById('camera-tab').addEventListener('click', function(e) {
+            document.getElementById('camera').classList.add('show', 'active');
+            document.getElementById('upload').classList.remove('show', 'active');
+            document.getElementById('camera-tab').classList.add('active');
+            document.getElementById('upload-tab').classList.remove('active');
+        });
+        
+        document.getElementById('upload-tab').addEventListener('click', function(e) {
+            document.getElementById('upload').classList.add('show', 'active');
+            document.getElementById('camera').classList.remove('show', 'active');
+            document.getElementById('upload-tab').classList.add('active');
+            document.getElementById('camera-tab').classList.remove('active');
+            stopCameraStream();
+        });
+        
+        // Start camera
+        startButton.addEventListener('click', async () => {
+            try {
+                startButton.innerHTML = '<div class="spinner-border spinner-border-sm me-2" role="status"></div> Accessing Camera...';
+                startButton.disabled = true;
+                
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: 'environment',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                });
+                videoElement.srcObject = stream;
+                videoContainer.style.display = 'block';
+                startButton.disabled = true;
+                stopButton.disabled = false;
+                
+                // Start scanning for Xecure codes
+                scanInterval = setInterval(captureAndScan, 1000);
+                
+                // Reset button
+                startButton.innerHTML = '<i class="bi bi-camera-video me-1"></i> Start Camera';
+            } catch (err) {
+                console.error('Error accessing camera:', err);
+                alert('Could not access the camera. Please make sure you have given permission, or try using the file upload option.');
+                
+                // Reset button on error
+                startButton.innerHTML = '<i class="bi bi-camera-video me-1"></i> Start Camera';
+                startButton.disabled = false;
+            }
+        });
+        
+        // Stop camera
+        stopButton.addEventListener('click', () => {
+            stopCameraStream();
+        });
+        
+        function stopCameraStream() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            if (scanInterval) {
+                clearInterval(scanInterval);
+                scanInterval = null;
+            }
+            videoContainer.style.display = 'none';
+            startButton.disabled = false;
+            stopButton.disabled = true;
+            scanOverlay.style.display = 'none';
+        }
+        
+        // Capture video frame and scan for Xecure code
+        async function captureAndScan() {
+            const canvas = document.createElement('canvas');
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+            
+            // Draw the current video frame to the canvas
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+            
+            // Convert the canvas to a blob
+            canvas.toBlob(async (blob) => {
+                const formData = new FormData();
+                formData.append('qrImage', blob, 'camera_capture.jpg');
+                formData.append('dealerId', sessionDealerId);
+                
+                // Add location data if available
+                if (userLocation) {
+                    formData.append('latitude', userLocation.latitude);
+                    formData.append('longitude', userLocation.longitude);
+                }
+                
+                try {
+                    const response = await fetch('/read', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    console.log('Camera scan result:', result);
+                    
+                    if (result.success) {
+                        // Show success overlay
+                        scanOverlay.style.display = 'block';
+                        
+                        // Stop scanning
+                        clearInterval(scanInterval);
+                        
+                        // Display result
+                        displayResult(result);
+                        
+                        // Stop after a successful scan
+                        setTimeout(() => {
+                            stopCameraStream();
+                        }, 1000);
+                    }
+                } catch (error) {
+                    console.error('Error sending camera capture:', error);
+                }
+            }, 'image/jpeg', 0.9);
+        }
+        
+        // Process Xecure code from form data
+        async function processQrCode(formData) {
+            try {
+                const response = await fetch('/read', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                console.log('Server response:', result);
+                
+                displayResult(result);
+                
+                // Scroll to results
+                document.getElementById('validateResult').scrollIntoView({ behavior: 'smooth' });
+                
+                return result;
+            } catch (error) {
+                document.getElementById('validateResult').innerHTML = `
+                    <div class="alert alert-danger">
+                        <h4 class="alert-heading"><i class="bi bi-exclamation-triangle-fill"></i> Error Processing Request</h4>
+                        <p>${error.message}</p>
+                        <p class="mb-0">Please try again or use a different Xecure code image.</p>
+                    </div>
+                `;
+                throw error;
+            }
+        }
+        
+        // Display result
+        function displayResult(result) {
+            // Log the entire result object for debugging
+            console.log('Full result object:', result);
+            
+            if (result.success) {
+                let dealerInfoHtml = '';
+                let statusUpdateHtml = '';
+                
+                if (result.dealer_type && result.dealer_name) {
+                    dealerInfoHtml = `
+                        <div class="card mb-3 border-0 bg-light">
+                            <div class="card-body">
+                                <h5 class="mb-3"><i class="bi bi-building me-2"></i> ${result.dealer_type} Information</h5>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <p class="mb-1 text-muted">Type</p>
+                                        <p class="fw-bold">${result.dealer_type}</p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <p class="mb-1 text-muted">Name</p>
+                                        <p class="fw-bold">${result.dealer_name}</p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <p class="mb-1 text-muted">Address</p>
+                                        <p class="fw-bold">${result.dealer_address}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    if (result.location_updated) {
+                        // Determine status message based on dealer type
+                        let statusMessage, badgeText;
+                        
+                        if (result.dealer_type === 'Factory') {
+                            statusMessage = "The Xecure code has been verified at factory";
+                            badgeText = "Factory_Reached";
+                        } else if (result.dealer_type === 'Dealer') {
+                            statusMessage = "The Xecure code has been updated to dealer location";
+                            badgeText = "Dealer_Reached";
+                        } else if (result.dealer_type === 'Retailer') {
+                            statusMessage = "The Xecure code has been received by retailer";
+                            badgeText = "Retailer_Reached";
+                        } else {
+                            statusMessage = "The Xecure code has been updated";
+                            badgeText = "UPDATED";
+                        }
+                        
+                        statusUpdateHtml = `
+                            <div class="alert alert-success mb-0 mt-3">
+                                <h5 class="mb-2"><i class="bi bi-check-circle-fill me-2"></i> Status Updated Successfully</h5>
+                                <p class="mb-1">${statusMessage} <span class="badge bg-success">${badgeText}</span></p>
+                                <p class="small text-muted mb-0">The tracking system has been updated with your current location and timestamp.</p>
+                            </div>
+                        `;
+                    }
+                } else if (result.location_updated && result.update_type === 'retailer') {
+                    // Handle retailer status update (no dealer ID provided)
+                    statusUpdateHtml = `
+                        <div class="alert alert-success mb-0 mt-3">
+                            <h5 class="mb-2"><i class="bi bi-check-circle-fill me-2"></i> Status Updated Successfully</h5>
+                            <p class="mb-1">The Xecure code has been marked as <span class="badge bg-success">VALID_ONCE</span> in the tracking system</p>
+                            <p class="small text-muted mb-0">The system has recorded this validation with location and timestamp data.</p>
+                        </div>
+                    `;
+                } else if (result.location_updated && result.update_type === 'consumer') {
+                    // Handle consumer status update (guest user)
+                    statusUpdateHtml = `
+                        <div class="alert alert-success mb-0 mt-3">
+                            <h5 class="mb-2"><i class="bi bi-check-circle-fill me-2"></i> Status Updated Successfully</h5>
+                            <p class="mb-1">The Xecure code has been validated by consumer <span class="badge bg-success">Factory_Reached</span></p>
+                            <p class="small text-muted mb-0">The tracking system has been updated with your current location and timestamp.</p>
+                        </div>
+                    `;
+                }
+                
+                // Create medicine details HTML if available
+                let medicineDetailsHtml = '';
+                if (result.medicine_details && typeof result.medicine_details === 'object') {
+                    console.log('Medicine details found:', result.medicine_details);
+                    const medicine = result.medicine_details;
+                    
+                    // Define possible field mappings (different column names that might exist)
+                    const nameFields = ['Name_of_item', 'Name', 'Medicine_Name', 'Product_Name'];
+                    const manufacturerFields = ['Name_of_manufacturer', 'Manufacturer', 'Manufacturer_Name'];
+                    const mfgDateFields = ['Date_of_MFG', 'Manufacturing_Date', 'MFG_Date'];
+                    const expDateFields = ['Date_of_EXP', 'Expiry_Date', 'EXP_Date'];
+                    const mrpFields = ['MRP', 'Price', 'Cost'];
+                    const locationFields = ['Origin_Factory_Location', 'Factory_Location', 'Location'];
+                    const detailsFields = ['More_Details', 'Details', 'Additional_Details'];
+                    
+                    // Helper function to get the first non-empty value from possible fields
+                    const getValueFromPossibleFields = (obj, fields) => {
+                        for (const field of fields) {
+                            if (field in obj && obj[field] && obj[field] !== 'undefined' && obj[field] !== 'null') {
+                                return obj[field];
+                            }
+                        }
+                        return 'N/A';
+                    };
+                    
+                    const medicineName = getValueFromPossibleFields(medicine, nameFields);
+                    const manufacturer = getValueFromPossibleFields(medicine, manufacturerFields);
+                    const mfgDate = getValueFromPossibleFields(medicine, mfgDateFields);
+                    const expDate = getValueFromPossibleFields(medicine, expDateFields);
+                    const mrp = getValueFromPossibleFields(medicine, mrpFields);
+                    const factoryLocation = getValueFromPossibleFields(medicine, locationFields);
+                    const additionalDetails = getValueFromPossibleFields(medicine, detailsFields);
+                    
+                    medicineDetailsHtml = `
+                        <div class="card border-0 bg-light-50 mb-3">
+                            <div class="card-body">
+                                <h4 class="mb-3 text-primary"><i class="bi bi-capsule me-2"></i> Medicine Details</h4>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="text-muted mb-1">Medicine Name</label>
+                                            <p class="form-control bg-white">${medicineName}</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="text-muted mb-1">Manufacturer</label>
+                                            <p class="form-control bg-white">${manufacturer}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="text-muted mb-1">Manufacturing Date</label>
+                                            <p class="form-control bg-white">${mfgDate}</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="text-muted mb-1">Expiry Date</label>
+                                            <p class="form-control bg-white">${expDate}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="text-muted mb-1">MRP</label>
+                                            <p class="form-control bg-white">₹${mrp}</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="text-muted mb-1">Factory Location</label>
+                                            <p class="form-control bg-white">${factoryLocation}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                ${additionalDetails !== 'N/A' ? `
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="mb-0">
+                                            <label class="text-muted mb-1">Additional Details</label>
+                                            <p class="form-control bg-white">${additionalDetails}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Construct full result HTML
+                const resultHtml = `
+                    <div class="card border-0 bg-light">
+                        <div class="card-body">
+                            <h4 class="mb-3 text-success"><i class="bi bi-check-circle-fill me-2"></i> Xecure Code Validated</h4>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="text-muted mb-1">Xecure Code</label>
+                                        <p class="form-control">${result.qr_code}</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="text-muted mb-1">Status</label>
+                                        <p class="form-control">${result.status}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            ${medicineDetailsHtml}
+                            ${dealerInfoHtml}
+                            ${statusUpdateHtml}
+                        </div>
+                    </div>
+                `;
+                
+                // Display result
+                document.getElementById('validateResult').innerHTML = resultHtml;
+            } else {
+                // Handle error case
+                document.getElementById('validateResult').innerHTML = `
+                    <div class="alert alert-danger">
+                        <h4 class="alert-heading"><i class="bi bi-exclamation-triangle-fill"></i> Error Processing Request</h4>
+                        <p>${result.error}</p>
+                        <p class="mb-0">Please try again or use a different Xecure code image.</p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
