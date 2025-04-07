@@ -560,456 +560,306 @@
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <script>
         // Set dealer ID from session if available
-        const sessionDealerId = "{{ dealer_id|default('', true) }}";
-        
-        // Location tracking
-        let userLocation = null;
-        
-        // Try to get user location
-        function getUserLocation() {
-            if (navigator.geolocation) {
-                document.getElementById('locationStatus').textContent = 'Requesting location access...';
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        userLocation = {
-                            latitude: position.coords.latitude,
-                            longitude: position.coords.longitude,
-                            accuracy: position.coords.accuracy
-                        };
-                        document.getElementById('locationStatus').innerHTML = 
-                            `Location access granted <span class="badge bg-success ms-1">Active</span> (${userLocation.latitude.toFixed(4)}, ${userLocation.longitude.toFixed(4)})`;
-                    },
-                    (error) => {
-                        console.error('Location error:', error.message);
-                        document.getElementById('locationStatus').innerHTML = 
-                            `Location access denied: ${error.message}. <span class="badge bg-warning ms-1">Limited</span> Status updates will not include location.`;
-                    }
-                );
-            } else {
-                document.getElementById('locationStatus').innerHTML = 
-                    'Geolocation is not supported by this browser. <span class="badge bg-warning ms-1">Limited</span>';
-            }
-        }
-        
-        // Request location on page load
-        getUserLocation();
-        
-        // Start camera automatically on page load since it's the default tab
-        window.addEventListener('DOMContentLoaded', async () => {
-            // Small delay to ensure DOM is fully loaded
-            setTimeout(() => {
-                if (document.getElementById('camera').classList.contains('show') && 
-                    document.getElementById('camera').classList.contains('active')) {
-                    startButton.click();
-                }
-            }, 500);
-        });
-        
-        // File upload validation
-        document.getElementById('validateForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData();
-            const fileInput = document.getElementById('qrImage');
-            
-            if (fileInput.files.length > 0) {
-                // Show loading state
-                const button = e.target.querySelector('button[type="submit"]');
-                const originalText = button.innerHTML;
-                button.innerHTML = '<div class="spinner-border spinner-border-sm me-2" role="status"></div> Processing...';
-                button.disabled = true;
-                
-                formData.append('qrImage', fileInput.files[0]);
-                formData.append('dealerId', sessionDealerId);
-                
-                // Add location data if available
-                if (userLocation) {
-                    formData.append('latitude', userLocation.latitude);
-                    formData.append('longitude', userLocation.longitude);
-                }
-                
-                try {
-                    await processQrCode(formData);
-                } finally {
-                    // Reset button state
-                    button.innerHTML = originalText;
-                    button.disabled = false;
-                }
-            }
-        });
-        
-        // Camera scanning
-        const videoElement = document.getElementById('qrVideo');
-        const startButton = document.getElementById('startCamera');
-        const stopButton = document.getElementById('stopCamera');
-        const videoContainer = document.getElementById('videoContainer');
-        const scanOverlay = document.getElementById('scanOverlay');
-        
-        let stream = null;
-        let scanInterval = null;
-        
-        // Initialize tabs
-        document.getElementById('camera-tab').addEventListener('click', function(e) {
-            document.getElementById('camera').classList.add('show', 'active');
-            document.getElementById('upload').classList.remove('show', 'active');
-            document.getElementById('camera-tab').classList.add('active');
-            document.getElementById('upload-tab').classList.remove('active');
-        });
-        
-        document.getElementById('upload-tab').addEventListener('click', function(e) {
-            document.getElementById('upload').classList.add('show', 'active');
-            document.getElementById('camera').classList.remove('show', 'active');
-            document.getElementById('upload-tab').classList.add('active');
-            document.getElementById('camera-tab').classList.remove('active');
-            stopCameraStream();
-        });
-        
-        // Start camera
-        startButton.addEventListener('click', async () => {
+        const dealerId = '{{ dealer_id }}';
+        let currentStream = null;
+        let selectedFile = null;
+        let isProcessing = false;
+
+        // Initialize camera
+        async function initCamera() {
             try {
-                startButton.innerHTML = '<div class="spinner-border spinner-border-sm me-2" role="status"></div> Accessing Camera...';
-                startButton.disabled = true;
-                
-                stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { 
+                const constraints = {
+                    video: {
                         facingMode: 'environment',
                         width: { ideal: 1280 },
                         height: { ideal: 720 }
                     }
-                });
-                videoElement.srcObject = stream;
-                videoContainer.style.display = 'block';
-                startButton.disabled = true;
-                stopButton.disabled = false;
+                };
                 
-                // Start scanning for Xecure codes
-                scanInterval = setInterval(captureAndScan, 1000);
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                const video = document.getElementById('video');
+                video.srcObject = stream;
+                currentStream = stream;
                 
-                // Reset button
-                startButton.innerHTML = '<i class="bi bi-camera-video me-1"></i> Start Camera';
+                // Start QR code scanning
+                requestAnimationFrame(scanQRCode);
             } catch (err) {
                 console.error('Error accessing camera:', err);
-                alert('Could not access the camera. Please make sure you have given permission, or try using the file upload option.');
-                
-                // Reset button on error
-                startButton.innerHTML = '<i class="bi bi-camera-video me-1"></i> Start Camera';
-                startButton.disabled = false;
+                alert('Error accessing camera. Please make sure you have granted camera permissions.');
             }
-        });
-        
-        // Stop camera
-        stopButton.addEventListener('click', () => {
-            stopCameraStream();
-        });
-        
-        function stopCameraStream() {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-                stream = null;
-            }
-            if (scanInterval) {
-                clearInterval(scanInterval);
-                scanInterval = null;
-            }
-            videoContainer.style.display = 'none';
-            startButton.disabled = false;
-            stopButton.disabled = true;
-            scanOverlay.style.display = 'none';
         }
-        
-        // Capture video frame and scan for Xecure code
-        async function captureAndScan() {
-            const canvas = document.createElement('canvas');
-            canvas.width = videoElement.videoWidth;
-            canvas.height = videoElement.videoHeight;
+
+        // Switch between front and back cameras
+        async function switchCamera() {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+            }
             
-            // Draw the current video frame to the canvas
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+            const video = document.getElementById('video');
+            const constraints = {
+                video: {
+                    facingMode: video.srcObject ? 
+                        (video.srcObject.getVideoTracks()[0].getSettings().facingMode === 'user' ? 'environment' : 'user') : 
+                        'environment'
+                }
+            };
             
-            // Convert the canvas to a blob
-            canvas.toBlob(async (blob) => {
-                const formData = new FormData();
-                formData.append('qrImage', blob, 'camera_capture.jpg');
-                formData.append('dealerId', sessionDealerId);
-                
-                // Add location data if available
-                if (userLocation) {
-                    formData.append('latitude', userLocation.latitude);
-                    formData.append('longitude', userLocation.longitude);
-                }
-                
-                try {
-                    const response = await fetch('/read', {
-                        method: 'POST',
-                        body: formData
-                    });
-                    
-                    const result = await response.json();
-                    console.log('Camera scan result:', result);
-                    
-                    if (result.success) {
-                        // Show success overlay
-                        scanOverlay.style.display = 'block';
-                        
-                        // Stop scanning
-                        clearInterval(scanInterval);
-                        
-                        // Display result
-                        displayResult(result);
-                        
-                        // Stop after a successful scan
-                        setTimeout(() => {
-                            stopCameraStream();
-                        }, 1000);
-                    }
-                } catch (error) {
-                    console.error('Error sending camera capture:', error);
-                }
-            }, 'image/jpeg', 0.9);
-        }
-        
-        // Process Xecure code from form data
-        async function processQrCode(formData) {
             try {
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+                currentStream = stream;
+            } catch (err) {
+                console.error('Error switching camera:', err);
+                alert('Error switching camera. Please try again.');
+            }
+        }
+
+        // Scan QR code from video stream
+        function scanQRCode() {
+            if (!currentStream || isProcessing) {
+                requestAnimationFrame(scanQRCode);
+                return;
+            }
+
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                canvas.height = video.videoHeight;
+                canvas.width = video.videoWidth;
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height);
+                
+                if (code) {
+                    isProcessing = true;
+                    // Convert canvas to blob and send
+                    canvas.toBlob(function(blob) {
+                        const formData = new FormData();
+                        formData.append('qrImage', blob, 'qr_code.png');
+                        
+                        // Add dealer ID if available
+                        if (dealerId) {
+                            formData.append('dealerId', dealerId);
+                        }
+                        
+                        // Send request
+                        fetch('/read', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Format the response for display
+                                const formattedData = {
+                                    status: data.status,
+                                    product_name: data.medicine_details?.Name_of_item || 'N/A',
+                                    manufacturer: data.medicine_details?.Name_of_manufacturer || 'N/A',
+                                    batch_number: data.medicine_details?.Batch_Number || 'N/A',
+                                    manufacturing_date: data.medicine_details?.Date_of_MFG || 'N/A',
+                                    expiry_date: data.medicine_details?.Date_of_EXP || 'N/A',
+                                    current_location: data.dealer_name || 'Unknown Location'
+                                };
+                                displayResult(formattedData);
+                            } else {
+                                displayResult({ error: data.error || 'Failed to validate QR code' });
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Error validating QR code:', err);
+                            displayResult({ error: 'Error validating QR code. Please try again.' });
+                        })
+                        .finally(() => {
+                            isProcessing = false;
+                        });
+                    }, 'image/png');
+                }
+            }
+
+            requestAnimationFrame(scanQRCode);
+        }
+
+        // Handle file upload
+        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('qrFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a file to upload');
+                return;
+            }
+
+            if (!file.type.startsWith('image/')) {
+                alert('Please select an image file');
+                return;
+            }
+
+            try {
+                isProcessing = true;
+                const formData = new FormData();
+                formData.append('qrImage', file);
+                
+                // Add dealer ID if available
+                if (dealerId) {
+                    formData.append('dealerId', dealerId);
+                }
+                
                 const response = await fetch('/read', {
                     method: 'POST',
                     body: formData
                 });
+
+                const data = await response.json();
                 
-                const result = await response.json();
-                console.log('Server response:', result);
-                
-                displayResult(result);
-                
-                // Scroll to results
-                document.getElementById('validateResult').scrollIntoView({ behavior: 'smooth' });
-                
-                return result;
-            } catch (error) {
-                document.getElementById('validateResult').innerHTML = `
-                    <div class="alert alert-danger">
-                        <h4 class="alert-heading"><i class="bi bi-exclamation-triangle-fill"></i> Error Processing Request</h4>
-                        <p>${error.message}</p>
-                        <p class="mb-0">Please try again or use a different Xecure code image.</p>
-                    </div>
-                `;
-                throw error;
-            }
-        }
-        
-        // Display result
-        function displayResult(result) {
-            // Log the entire result object for debugging
-            console.log('Full result object:', result);
-            
-            if (result.success) {
-                let dealerInfoHtml = '';
-                let statusUpdateHtml = '';
-                
-                if (result.dealer_type && result.dealer_name) {
-                    dealerInfoHtml = `
-                        <div class="card mb-3 border-0 bg-light">
-                            <div class="card-body">
-                                <h5 class="mb-3"><i class="bi bi-building me-2"></i> ${result.dealer_type} Information</h5>
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <p class="mb-1 text-muted">Type</p>
-                                        <p class="fw-bold">${result.dealer_type}</p>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <p class="mb-1 text-muted">Name</p>
-                                        <p class="fw-bold">${result.dealer_name}</p>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <p class="mb-1 text-muted">Address</p>
-                                        <p class="fw-bold">${result.dealer_address}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    
-                    if (result.location_updated) {
-                        // Determine status message based on dealer type
-                        let statusMessage, badgeText;
-                        
-                        if (result.dealer_type === 'Factory') {
-                            statusMessage = "The Xecure code has been verified at factory";
-                            badgeText = "Factory_Reached";
-                        } else if (result.dealer_type === 'Dealer') {
-                            statusMessage = "The Xecure code has been updated to dealer location";
-                            badgeText = "Dealer_Reached";
-                        } else if (result.dealer_type === 'Retailer') {
-                            statusMessage = "The Xecure code has been received by retailer";
-                            badgeText = "Retailer_Reached";
-                        } else {
-                            statusMessage = "The Xecure code has been updated";
-                            badgeText = "UPDATED";
-                        }
-                        
-                        statusUpdateHtml = `
-                            <div class="alert alert-success mb-0 mt-3">
-                                <h5 class="mb-2"><i class="bi bi-check-circle-fill me-2"></i> Status Updated Successfully</h5>
-                                <p class="mb-1">${statusMessage} <span class="badge bg-success">${badgeText}</span></p>
-                                <p class="small text-muted mb-0">The tracking system has been updated with your current location and timestamp.</p>
-                            </div>
-                        `;
-                    }
-                } else if (result.location_updated && result.update_type === 'retailer') {
-                    // Handle retailer status update (no dealer ID provided)
-                    statusUpdateHtml = `
-                        <div class="alert alert-success mb-0 mt-3">
-                            <h5 class="mb-2"><i class="bi bi-check-circle-fill me-2"></i> Status Updated Successfully</h5>
-                            <p class="mb-1">The Xecure code has been marked as <span class="badge bg-success">VALID_ONCE</span> in the tracking system</p>
-                            <p class="small text-muted mb-0">The system has recorded this validation with location and timestamp data.</p>
-                        </div>
-                    `;
-                } else if (result.location_updated && result.update_type === 'consumer') {
-                    // Handle consumer status update (guest user)
-                    statusUpdateHtml = `
-                        <div class="alert alert-success mb-0 mt-3">
-                            <h5 class="mb-2"><i class="bi bi-check-circle-fill me-2"></i> Status Updated Successfully</h5>
-                            <p class="mb-1">The Xecure code has been validated by consumer <span class="badge bg-success">Factory_Reached</span></p>
-                            <p class="small text-muted mb-0">The tracking system has been updated with your current location and timestamp.</p>
-                        </div>
-                    `;
-                }
-                
-                // Create medicine details HTML if available
-                let medicineDetailsHtml = '';
-                if (result.medicine_details && typeof result.medicine_details === 'object') {
-                    console.log('Medicine details found:', result.medicine_details);
-                    const medicine = result.medicine_details;
-                    
-                    // Define possible field mappings (different column names that might exist)
-                    const nameFields = ['Name_of_item', 'Name', 'Medicine_Name', 'Product_Name'];
-                    const manufacturerFields = ['Name_of_manufacturer', 'Manufacturer', 'Manufacturer_Name'];
-                    const mfgDateFields = ['Date_of_MFG', 'Manufacturing_Date', 'MFG_Date'];
-                    const expDateFields = ['Date_of_EXP', 'Expiry_Date', 'EXP_Date'];
-                    const mrpFields = ['MRP', 'Price', 'Cost'];
-                    const locationFields = ['Origin_Factory_Location', 'Factory_Location', 'Location'];
-                    const detailsFields = ['More_Details', 'Details', 'Additional_Details'];
-                    
-                    // Helper function to get the first non-empty value from possible fields
-                    const getValueFromPossibleFields = (obj, fields) => {
-                        for (const field of fields) {
-                            if (field in obj && obj[field] && obj[field] !== 'undefined' && obj[field] !== 'null') {
-                                return obj[field];
-                            }
-                        }
-                        return 'N/A';
+                if (data.success) {
+                    // Format the response for display
+                    const formattedData = {
+                        status: data.status,
+                        product_name: data.medicine_details?.Name_of_item || 'N/A',
+                        manufacturer: data.medicine_details?.Name_of_manufacturer || 'N/A',
+                        batch_number: data.medicine_details?.Batch_Number || 'N/A',
+                        manufacturing_date: data.medicine_details?.Date_of_MFG || 'N/A',
+                        expiry_date: data.medicine_details?.Date_of_EXP || 'N/A',
+                        current_location: data.dealer_name || 'Unknown Location'
                     };
-                    
-                    const medicineName = getValueFromPossibleFields(medicine, nameFields);
-                    const manufacturer = getValueFromPossibleFields(medicine, manufacturerFields);
-                    const mfgDate = getValueFromPossibleFields(medicine, mfgDateFields);
-                    const expDate = getValueFromPossibleFields(medicine, expDateFields);
-                    const mrp = getValueFromPossibleFields(medicine, mrpFields);
-                    const factoryLocation = getValueFromPossibleFields(medicine, locationFields);
-                    const additionalDetails = getValueFromPossibleFields(medicine, detailsFields);
-                    
-                    medicineDetailsHtml = `
-                        <div class="card border-0 bg-light-50 mb-3">
-                            <div class="card-body">
-                                <h4 class="mb-3 text-primary"><i class="bi bi-capsule me-2"></i> Medicine Details</h4>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="text-muted mb-1">Medicine Name</label>
-                                            <p class="form-control bg-white">${medicineName}</p>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="text-muted mb-1">Manufacturer</label>
-                                            <p class="form-control bg-white">${manufacturer}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="text-muted mb-1">Manufacturing Date</label>
-                                            <p class="form-control bg-white">${mfgDate}</p>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="text-muted mb-1">Expiry Date</label>
-                                            <p class="form-control bg-white">${expDate}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="text-muted mb-1">MRP</label>
-                                            <p class="form-control bg-white">₹${mrp}</p>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="text-muted mb-1">Factory Location</label>
-                                            <p class="form-control bg-white">${factoryLocation}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                ${additionalDetails !== 'N/A' ? `
-                                <div class="row">
-                                    <div class="col-12">
-                                        <div class="mb-0">
-                                            <label class="text-muted mb-1">Additional Details</label>
-                                            <p class="form-control bg-white">${additionalDetails}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                ` : ''}
-                            </div>
-                        </div>
-                    `;
+                    displayResult(formattedData);
+                } else {
+                    displayResult({ error: data.error || 'Failed to validate QR code' });
                 }
-                
-                // Construct full result HTML
-                const resultHtml = `
-                    <div class="card border-0 bg-light">
-                        <div class="card-body">
-                            <h4 class="mb-3 text-success"><i class="bi bi-check-circle-fill me-2"></i> Xecure Code Validated</h4>
-                            
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="text-muted mb-1">Xecure Code</label>
-                                        <p class="form-control">${result.qr_code}</p>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="text-muted mb-1">Status</label>
-                                        <p class="form-control">${result.status}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            ${medicineDetailsHtml}
-                            ${dealerInfoHtml}
-                            ${statusUpdateHtml}
+            } catch (err) {
+                console.error('Error validating QR code:', err);
+                displayResult({ error: 'Error validating QR code. Please try again.' });
+            } finally {
+                isProcessing = false;
+            }
+        });
+
+        // Display validation result
+        function displayResult(data) {
+            const resultContainer = document.getElementById('resultContainer');
+            const resultContent = document.getElementById('resultContent');
+            
+            let resultHTML = '';
+            
+            if (data.error) {
+                resultHTML = `
+                    <div class="alert alert-danger">
+                        <div class="result-header">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <h4>Invalid Code</h4>
                         </div>
+                        <p>${data.error}</p>
                     </div>
                 `;
-                
-                // Display result
-                document.getElementById('validateResult').innerHTML = resultHtml;
             } else {
-                // Handle error case
-                document.getElementById('validateResult').innerHTML = `
-                    <div class="alert alert-danger">
-                        <h4 class="alert-heading"><i class="bi bi-exclamation-triangle-fill"></i> Error Processing Request</h4>
-                        <p>${result.error}</p>
-                        <p class="mb-0">Please try again or use a different Xecure code image.</p>
+                const statusClass = data.status === 'Valid' ? 'success' : 'danger';
+                const statusIcon = data.status === 'Valid' ? 'check-circle' : 'x-circle';
+                
+                resultHTML = `
+                    <div class="alert alert-${statusClass}">
+                        <div class="result-header">
+                            <i class="bi bi-${statusIcon}"></i>
+                            <h4>${data.status}</h4>
+                        </div>
+                        <div class="result-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Product Name</span>
+                                <span class="detail-value">${data.product_name}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Manufacturer</span>
+                                <span class="detail-value">${data.manufacturer}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Batch Number</span>
+                                <span class="detail-value">${data.batch_number}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Manufacturing Date</span>
+                                <span class="detail-value">${data.manufacturing_date}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Expiry Date</span>
+                                <span class="detail-value">${data.expiry_date}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Current Location</span>
+                                <span class="detail-value">${data.current_location}</span>
+                            </div>
+                        </div>
                     </div>
                 `;
             }
+            
+            resultContent.innerHTML = resultHTML;
+            resultContainer.style.display = 'block';
         }
+
+        // Initialize camera when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initCamera();
+            
+            // Add event listeners for camera controls
+            document.getElementById('switchCamera').addEventListener('click', switchCamera);
+            document.getElementById('captureImage').addEventListener('click', function() {
+                if (currentStream) {
+                    const video = document.getElementById('video');
+                    const canvas = document.getElementById('canvas');
+                    const context = canvas.getContext('2d');
+                    
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    
+                    // Convert canvas to blob and send
+                    canvas.toBlob(function(blob) {
+                        const formData = new FormData();
+                        formData.append('qrImage', blob, 'qr_code.png');
+                        
+                        // Add dealer ID if available
+                        if (dealerId) {
+                            formData.append('dealerId', dealerId);
+                        }
+                        
+                        // Send request
+                        fetch('/read', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Format the response for display
+                                const formattedData = {
+                                    status: data.status,
+                                    product_name: data.medicine_details?.Name_of_item || 'N/A',
+                                    manufacturer: data.medicine_details?.Name_of_manufacturer || 'N/A',
+                                    batch_number: data.medicine_details?.Batch_Number || 'N/A',
+                                    manufacturing_date: data.medicine_details?.Date_of_MFG || 'N/A',
+                                    expiry_date: data.medicine_details?.Date_of_EXP || 'N/A',
+                                    current_location: data.dealer_name || 'Unknown Location'
+                                };
+                                displayResult(formattedData);
+                            } else {
+                                displayResult({ error: data.error || 'Failed to validate QR code' });
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Error validating QR code:', err);
+                            displayResult({ error: 'Error validating QR code. Please try again.' });
+                        })
+                        .finally(() => {
+                            isProcessing = false;
+                        });
+                    }, 'image/png');
+                }
+            });
+        });
     </script>
 </body>
 </html>
