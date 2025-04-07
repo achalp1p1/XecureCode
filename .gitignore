@@ -27,4 +27,6 @@ ENV/
 uploads/*
 !uploads/.gitkeep
 data/*.xlsx
-*.log 
+*.log
+logs/*
+!logs/.gitkeep 
