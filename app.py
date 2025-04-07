@@ -11,9 +11,16 @@ from modules.status_updates import update_tracker_based_on_dealer_type, update_r
 from modules.counterfeit import log_counterfeit_attempt
 from modules.hierarchy import get_hierarchy_info
 from modules.reports import generate_reports
+from modules.location_updates import update_tracker_with_location
 
 app = Flask(__name__)
 app.secret_key = 'qrcodesystem2023'  # For session management
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload size
+app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg'}
+
+# Ensure the upload folder exists
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 @app.route('/')
 def index():
@@ -64,15 +71,58 @@ def dashboard():
 def generate():
     return render_template('index.html', dealer_id=session.get('dealer_id'))
 
-@app.route('/validate')
+@app.route('/validate', methods=['GET', 'POST'])
 def validate():
     # Handle guest access
     if request.args.get('guest') == 'true':
         session.clear()  # Ensure no previous session data
     
-    # Pass dealer info to template if logged in
+    # Get dealer info from session if available
     dealer_id = session.get('dealer_id')
-    return render_template('validate.html', dealer_id=dealer_id)
+    dealer_type = session.get('dealer_type')
+    
+    if request.method == 'POST':
+        try:
+            # Get QR code data from form
+            qr_data = request.form.get('qrData')
+            if not qr_data:
+                return jsonify({'success': False, 'message': 'No QR code data provided'})
+            
+            # Get current location (you'll need to implement this based on your requirements)
+            current_location = "Current Location"  # Replace with actual location data
+            
+            # Update tracker with location information
+            success, message = update_tracker_with_location(
+                qr_data=qr_data,
+                dealer_id=dealer_id,
+                dealer_type=dealer_type,
+                location=current_location
+            )
+            
+            if not success:
+                return jsonify({'success': False, 'message': message})
+            
+            # Continue with existing validation logic
+            validation_result = validate_qr_code(qr_data)
+            if validation_result['success']:
+                # Get medicine details if available
+                medicine_details = get_medicine_details(qr_data)
+                if medicine_details:
+                    validation_result['medicine_details'] = medicine_details
+                
+                # Get hierarchy info if available
+                hierarchy_info = get_hierarchy_info(qr_data)
+                if hierarchy_info:
+                    validation_result['hierarchy_info'] = hierarchy_info
+                
+                return jsonify(validation_result)
+            else:
+                return jsonify(validation_result)
+                
+        except Exception as e:
+            return jsonify({'success': False, 'message': f'Error processing QR code: {str(e)}'})
+    
+    return render_template('validate.html')
 
 @app.route('/generate', methods=['POST'])
 def generate_qr_code():
@@ -191,10 +241,23 @@ def read_qr():
         print(f"Error processing Xecure code: {e}")
         return jsonify({'success': False, 'error': str(e)})
 
-@app.route('/reports')
-def reports():
+@app.route('/view-reports')
+def view_reports():
+    # Handle guest access
+    if request.args.get('guest') == 'true':
+        session.clear()  # Ensure no previous session data
+        try:
+            reports_data = generate_reports()
+            return render_template('reports.html', reports=reports_data)
+        except Exception as e:
+            print(f"Error in reports route: {str(e)}")  # Add logging
+            flash(f'Error loading reports data: {str(e)}', 'error')
+            return redirect(url_for('dashboard'))
+    
+    # For logged-in users
     if 'dealer_id' not in session:
         return redirect(url_for('login'))
+    
     reports_data = generate_reports()
     return render_template('reports.html', reports=reports_data)
 
@@ -256,4 +319,6 @@ def tracker():
         return redirect(url_for('dashboard'))
 
 if __name__ == '__main__':
-    app.run(debug=True) 
+    # Ensure all routes are properly registered
+    app.url_map.strict_slashes = False
+    app.run(debug=True, host='0.0.0.0', port=5000) 
