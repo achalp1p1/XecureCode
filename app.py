@@ -1,5 +1,7 @@
-from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for, session
+from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for, session, flash
 import io
+import pandas as pd
+import os
 
 # Import modular components
 from modules.qr_operations import generate_qr, decode_qr
@@ -191,16 +193,67 @@ def read_qr():
 
 @app.route('/reports')
 def reports():
-    """Show various reports based on product and tracking data"""
-    # Check if user is logged in
-    dealer_id = session.get('dealer_id')
-    
-    # Generate reports
+    if 'dealer_id' not in session:
+        return redirect(url_for('login'))
     reports_data = generate_reports()
+    return render_template('reports.html', reports=reports_data)
+
+@app.route('/tracker', methods=['GET', 'POST'])
+def tracker():
+    # Handle guest access
+    if request.args.get('guest') == 'true':
+        session.clear()  # Ensure no previous session data
+        try:
+            # Read the QR validation tracker Excel file
+            file_path = os.path.join('data', 'qr_validation_tracker.xlsx')
+            if not os.path.exists(file_path):
+                flash('Tracker file not found. Please ensure qr_validation_tracker.xlsx exists in the data directory.', 'error')
+                return redirect(url_for('dashboard'))
+                
+            df = pd.read_excel(file_path)
+            if df.empty:
+                flash('No validation records found in the tracker.', 'info')
+                return render_template('tracker.html', records=[], columns=[])
+                
+            # Get column names
+            columns = df.columns.tolist()
+            
+            # Convert DataFrame to list of dictionaries for template
+            records = df.to_dict('records')
+                
+            return render_template('tracker.html', records=records, columns=columns)
+        except Exception as e:
+            print(f"Error in tracker route: {str(e)}")  # Add logging
+            flash(f'Error loading tracker data: {str(e)}', 'error')
+            return redirect(url_for('dashboard'))
     
-    return render_template('reports.html', 
-                         dealer_id=dealer_id,
-                         reports=reports_data)
+    # For logged-in users
+    if 'dealer_id' not in session:
+        return redirect(url_for('login'))
+        
+    try:
+        # Read the QR validation tracker Excel file
+        file_path = os.path.join('data', 'qr_validation_tracker.xlsx')
+        if not os.path.exists(file_path):
+            flash('Tracker file not found. Please ensure qr_validation_tracker.xlsx exists in the data directory.', 'error')
+            return redirect(url_for('dashboard'))
+            
+        df = pd.read_excel(file_path)
+        if df.empty:
+            flash('No validation records found in the tracker.', 'info')
+            return render_template('tracker.html', records=[], columns=[])
+            
+        # Get column names
+        columns = df.columns.tolist()
+        
+        # Convert DataFrame to list of dictionaries for template
+        records = df.to_dict('records')
+            
+        return render_template('tracker.html', records=records, columns=columns)
+    except Exception as e:
+        print(f"Error in tracker route: {str(e)}")  # Add logging
+        flash(f'Error loading tracker data: {str(e)}', 'error')
+        return redirect(url_for('dashboard'))
 
 if __name__ == '__main__':
     app.run(debug=True) 

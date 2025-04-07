@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Validation Tracker - Xecure Code System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .tracker-container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a237e, #0d47a1);
+            color: white;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .table-responsive {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            padding: 1rem;
+            overflow-x: auto;
+        }
+        .table {
+            margin-bottom: 0;
+            width: 100%;
+        }
+        .table th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .table td {
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+        .status-badge {
+            padding: 0.5em 1em;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+        .status-valid {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-invalid {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .status-progress {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .nav-buttons {
+            margin-bottom: 1rem;
+        }
+        .table-container {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        @media (max-width: 768px) {
+            .tracker-container {
+                margin: 1rem auto;
+            }
+            .header {
+                padding: 0.75rem;
+            }
+            .table-responsive {
+                padding: 0.5rem;
+            }
+            .status-badge {
+                padding: 0.25em 0.5em;
+                font-size: 0.875rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="tracker-container">
+        <div class="header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">QR Validation Tracker</h1>
+                <div class="nav-buttons">
+                    <a href="/dashboard" class="btn btn-light btn-sm me-2">
+                        <i class="bi bi-house-door"></i> Dashboard
+                    </a>
+                    <a href="/reports" class="btn btn-light btn-sm me-2">
+                        <i class="bi bi-bar-chart"></i> Reports
+                    </a>
+                    <a href="/logout" class="btn btn-light btn-sm">
+                        <i class="bi bi-box-arrow-right"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <div class="table-container">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            {% for column in columns %}
+                            <th>{{ column }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in records %}
+                        <tr>
+                            {% for column in columns %}
+                            <td>
+                                {% if column.endswith('_Status') and record[column] == 'Yes' %}
+                                <span class="status-badge status-valid">Valid</span>
+                                {% elif column.endswith('_Status') and record[column] == 'No' %}
+                                <span class="status-badge status-invalid">Invalid</span>
+                                {% elif column.endswith('_Status') %}
+                                <span class="status-badge status-progress">In Progress</span>
+                                {% else %}
+                                {{ record[column] }}
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 
